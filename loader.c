@@ -391,6 +391,31 @@ static int flash_init(uint32_t *spi_base)
 	nuspi_write_reg(spi_base, NUSPI_REG_FMT, 0x80008);
 	nuspi_write_reg(spi_base, NUSPI_REG_FFMT, 0x30007);
 	nuspi_write_reg(spi_base, NUSPI_REG_RXEDGE, 0x0);
+	/* flash reset */
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
+	retval |= flash_tx(spi_base, SPIFLASH_ENABLE_RESET);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
+	retval |= nuspi_txwm_wait(spi_base);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
+	retval |= flash_tx(spi_base, SPIFLASH_RESET_DEVICE);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
+	retval |= nuspi_txwm_wait(spi_base);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
 	/* read flash id */
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
 	retval |= flash_tx(spi_base, SPIFLASH_READ_ID);
