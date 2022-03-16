@@ -343,6 +343,11 @@ static int flash_wip(uint32_t *spi_base)
 		retval |= FLASH_WIP_ERR;
 		goto out;
 	}
+	retval |= nuspi_txwm_wait(spi_base);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_WIP_ERR;
+		goto out;
+	}
 	while (1) {
 		retval |= flash_rx(spi_base, &value);
 		if (retval != NUSPI_OK) {
@@ -416,6 +421,24 @@ static int flash_init(uint32_t *spi_base)
 		retval |= FLASH_INIT_ERR;
 		goto out;
 	}
+	/* unlock */
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
+	retval |= flash_tx(spi_base, SPIFLASH_WRITE_STATUS1);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
+	retval |= flash_tx(spi_base, 0x00);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
+	retval |= nuspi_txwm_wait(spi_base);
+	if (retval != NUSPI_OK) {
+		retval |= FLASH_INIT_ERR;
+		goto out;
+	}
 	/* read flash id */
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
 	retval |= flash_tx(spi_base, SPIFLASH_READ_ID);
@@ -466,11 +489,6 @@ static int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_add
 			goto out;
 		}
 		retval |= flash_tx(spi_base, curr_addr >> 8);
-		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
-		}
-		retval |= flash_tx(spi_base, curr_addr);
 		if (retval != NUSPI_OK) {
 			retval |= FLASH_ERASE_ERR;
 			goto out;
