@@ -122,6 +122,7 @@
 #define SPIFLASH_BLOCK_SIZE		0x10000
 
 #define NUSPI_OK						(0x0)
+#define NUSPI_ERR						(0x1 << 31)
 #define NUSPI_TXWM_ERR					(0x1 << 0)
 #define NUSPI_TX_ERR					(0x1 << 1)
 #define NUSPI_RX_ERR					(0x1 << 2)
@@ -137,22 +138,24 @@
 #define NUSPI_TX_TIMEOUT			(5000)
 #define NUSPI_RX_TIMEOUT			(5000)
 
+uint32_t nuspi_version = 0;
+
 static inline void nuspi_read_reg(uint32_t volatile *spi_base, uint32_t offset, uint32_t *value);
 static inline void nuspi_write_reg(uint32_t volatile *spi_base, uint32_t offset, uint32_t value);
-static void nuspi_disable_hw_mode(uint32_t *spi_base);
-static void nuspi_enable_hw_mode(uint32_t *spi_base);
-static void nuspi_set_dir(uint32_t *spi_base, uint32_t dir);
-static int nuspi_txwm_wait(uint32_t *spi_base);
-static int nuspi_tx(uint32_t *spi_base, uint8_t in);
-static int nuspi_rx(uint32_t *spi_base, uint8_t *out);
+static inline void nuspi_disable_hw_mode(uint32_t *spi_base);
+static inline void nuspi_enable_hw_mode(uint32_t *spi_base);
+static inline void nuspi_set_dir(uint32_t *spi_base, uint32_t dir);
+static inline int nuspi_txwm_wait(uint32_t *spi_base);
+static inline int nuspi_tx(uint32_t *spi_base, uint8_t in);
+static inline int nuspi_rx(uint32_t *spi_base, uint8_t *out);
 
-static int flash_tx(uint32_t *spi_base, uint8_t in);
+static int flash_tx(uint32_t *spi_base, uint8_t in, bool txwm);
 static int flash_rx(uint32_t *spi_base, uint8_t *out);
-static int flash_init(uint32_t *spi_base);
 static int flash_wip(uint32_t *spi_base);
-static int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_addr);
-static int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_offset, uint32_t write_count);
-static int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, uint32_t read_count);
+int flash_init(uint32_t *spi_base);
+int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_addr);
+int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_offset, uint32_t write_count);
+int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, uint32_t read_count);
 
 int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1,
 				uint32_t params2, uint32_t params3)
@@ -160,6 +163,7 @@ int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1,
 	int retval = 0;
 	unsigned long params1_temp = params1;
 	nuspi_disable_hw_mode(spi_base);
+	nuspi_read_reg(spi_base, NUSPI_REG_VERSION, &nuspi_version);
 	switch (cs)
 	{
 	case ERASE_CMD:
@@ -175,6 +179,7 @@ int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1,
 		retval = flash_init(spi_base);
 		break;
 	default:
+		retval = NUSPI_ERR;
 		break;
 	}
 	nuspi_enable_hw_mode(spi_base);
@@ -191,21 +196,21 @@ static inline void nuspi_write_reg(uint32_t volatile *spi_base, uint32_t offset,
 	spi_base[offset / 4] = value;
 }
 
-static void nuspi_disable_hw_mode(uint32_t *spi_base)
+static inline void nuspi_disable_hw_mode(uint32_t *spi_base)
 {
 	uint32_t fctrl = 0;
 	nuspi_read_reg(spi_base, NUSPI_REG_FCTRL, &fctrl);
 	nuspi_write_reg(spi_base, NUSPI_REG_FCTRL, fctrl & ~NUSPI_FCTRL_EN);
 }
 
-static void nuspi_enable_hw_mode(uint32_t *spi_base)
+static inline void nuspi_enable_hw_mode(uint32_t *spi_base)
 {
 	uint32_t fctrl = 0;
 	nuspi_read_reg(spi_base, NUSPI_REG_FCTRL, &fctrl);
 	nuspi_write_reg(spi_base, NUSPI_REG_FCTRL, fctrl | NUSPI_FCTRL_EN);
 }
 
-static void nuspi_set_dir(uint32_t *spi_base, uint32_t dir)
+static inline void nuspi_set_dir(uint32_t *spi_base, uint32_t dir)
 {
 	uint32_t fmt = 0;
 	nuspi_read_reg(spi_base, NUSPI_REG_FMT, &fmt);
@@ -215,12 +220,10 @@ static void nuspi_set_dir(uint32_t *spi_base, uint32_t dir)
 	}
 }
 
-static int nuspi_txwm_wait(uint32_t *spi_base)
+static inline int nuspi_txwm_wait(uint32_t *spi_base)
 {
 	uint32_t timeout = NUSPI_TXWM_TIMEOUT;
-	uint32_t version = 0;
-	nuspi_read_reg(spi_base, NUSPI_REG_VERSION, &version);
-	if(version > 0x10100) {
+	if(nuspi_version > 0x10100) {
 		uint32_t status = 0;
 		while (timeout--) {
 			nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
@@ -243,12 +246,10 @@ static int nuspi_txwm_wait(uint32_t *spi_base)
 	return NUSPI_TXWM_ERR;
 }
 
-static int nuspi_tx(uint32_t *spi_base, uint8_t in)
+static inline int nuspi_tx(uint32_t *spi_base, uint8_t in)
 {
-	uint32_t timeout = NUSPI_TXWM_TIMEOUT;
-	uint32_t version = 0;
-	nuspi_read_reg(spi_base, NUSPI_REG_VERSION, &version);
-	if(version > 0x10100) {
+	uint32_t timeout = NUSPI_TX_TIMEOUT;
+	if(nuspi_version > 0x10100) {
 		uint32_t status = 0;
 		while (timeout--) {
 			nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
@@ -272,13 +273,11 @@ static int nuspi_tx(uint32_t *spi_base, uint8_t in)
 	return NUSPI_TX_ERR;
 }
 
-static int nuspi_rx(uint32_t *spi_base, uint8_t *out)
+static inline int nuspi_rx(uint32_t *spi_base, uint8_t *out)
 {
-	uint32_t timeout = NUSPI_TXWM_TIMEOUT;
-	uint32_t version = 0;
+	uint32_t timeout = NUSPI_RX_TIMEOUT;
 	uint32_t value = 0;
-	nuspi_read_reg(spi_base, NUSPI_REG_VERSION, &version);
-	if(version > 0x10100) {
+	if(nuspi_version > 0x10100) {
 		uint32_t status = 0;
 		while (timeout--) {
 			nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
@@ -302,21 +301,22 @@ static int nuspi_rx(uint32_t *spi_base, uint8_t *out)
 	return NUSPI_RX_ERR;
 }
 
-static int flash_tx(uint32_t *spi_base, uint8_t in) {
+static int flash_tx(uint32_t *spi_base, uint8_t in, bool txwm) {
 	int retval = 0;
 	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	retval |= nuspi_tx(spi_base, in);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_TX_ERR;
-		goto out;
+		goto error;
 	}
-	retval |= nuspi_txwm_wait(spi_base);
-	if (retval != NUSPI_OK) {
-		retval |= FLASH_TX_ERR;
-		goto out;
+	if (txwm) {
+		retval |= nuspi_txwm_wait(spi_base);
+		if (retval != NUSPI_OK) {
+			goto error;
+		}
 	}
-out:
 	return retval;
+error:
+	return retval | FLASH_TX_ERR;
 }
 
 static int flash_rx(uint32_t *spi_base, uint8_t *out) {
@@ -325,17 +325,16 @@ static int flash_rx(uint32_t *spi_base, uint8_t *out) {
 	nuspi_set_dir(spi_base, NUSPI_DIR_RX);
 	retval |= nuspi_tx(spi_base, 00);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_RX_ERR;
-		goto out;
+		goto error;
 	}
 	retval |= nuspi_rx(spi_base, &value);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_RX_ERR;
-		goto out;
+		goto error;
 	}
 	*out = value;
-out:
 	return retval;
+error:
+	return retval | FLASH_RX_ERR;
 }
 
 static int flash_wip(uint32_t *spi_base)
@@ -343,27 +342,26 @@ static int flash_wip(uint32_t *spi_base)
 	int retval = 0;
 	uint8_t value = 0;
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_READ_STATUS);
+	retval |= flash_tx(spi_base, SPIFLASH_READ_STATUS, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_WIP_ERR;
-		goto out;
+		goto error;
 	}
 	while (1) {
 		retval |= flash_rx(spi_base, &value);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WIP_ERR;
-			goto out;
+			goto error;
 		}
 		if ((value & SPIFLASH_BSY_BIT) == 0) {
 			break;
 		}
 	}
-out:
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	return retval;
+error:
+	return retval | FLASH_WIP_ERR;
 }
 
-static int flash_init(uint32_t *spi_base)
+int flash_init(uint32_t *spi_base)
 {
 	int retval = 0;
 	uint8_t rx  = 0;
@@ -398,52 +396,57 @@ static int flash_init(uint32_t *spi_base)
 	nuspi_write_reg(spi_base, NUSPI_REG_RXEDGE, 0x0);
 	/* flash reset */
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_ENABLE_RESET);
+	retval |= flash_tx(spi_base, SPIFLASH_ENABLE_RESET, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_INIT_ERR;
-		goto out;
+		goto error;
 	}
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_RESET_DEVICE);
+	retval |= flash_tx(spi_base, SPIFLASH_RESET_DEVICE, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_INIT_ERR;
-		goto out;
+		goto error;
 	}
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
+	retval |= flash_wip(spi_base);
+	if (retval != NUSPI_OK) {
+		goto error;
+	}
 	/* unlock */
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_WRITE_STATUS1);
+	retval |= flash_tx(spi_base, SPIFLASH_WRITE_ENABLE, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_INIT_ERR;
-		goto out;
+		goto error;
 	}
-	retval |= flash_tx(spi_base, 0x00);
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
+	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
+	retval |= flash_tx(spi_base, SPIFLASH_WRITE_STATUS1, false);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_INIT_ERR;
-		goto out;
+		goto error;
+	}
+	retval |= flash_tx(spi_base, 0x00, true);
+	if (retval != NUSPI_OK) {
+		goto error;
 	}
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	/* read flash id */
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_READ_ID);
+	retval |= flash_tx(spi_base, SPIFLASH_READ_ID, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_INIT_ERR;
-		goto out;
+		goto error;
 	}
 	for (int i = 0;i < 3;i++) {
 		if (NUSPI_OK != flash_rx(spi_base, &rx)) {
-			retval |= FLASH_INIT_ERR;
-			goto out;
+			goto error;
 		}
 		retval |= rx << (i * 8);
 	}
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
-out:
 	return retval;
+error:
+	return retval | FLASH_INIT_ERR;
 }
 
-static int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_addr)
+int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_addr)
 {
 	int retval = 0;
 	uint32_t curr_addr = first_addr;
@@ -451,45 +454,40 @@ static int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_add
 	for (int i = 0;i < sector_num;i++) {
 		curr_addr += i * SPIFLASH_BLOCK_SIZE;
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-		retval |= flash_tx(spi_base, SPIFLASH_WRITE_ENABLE);
+		retval |= flash_tx(spi_base, SPIFLASH_WRITE_ENABLE, true);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-		retval |= flash_tx(spi_base, SPIFLASH_BLOCK_ERASE);
+		retval |= flash_tx(spi_base, SPIFLASH_BLOCK_ERASE, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, curr_addr >> 16);
+		retval |= flash_tx(spi_base, curr_addr >> 16, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, curr_addr >> 8);
+		retval |= flash_tx(spi_base, curr_addr >> 8, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, curr_addr);
+		retval |= flash_tx(spi_base, curr_addr, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 		retval |= flash_wip(spi_base);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_ERASE_ERR;
-			goto out;
+			goto error;
 		}
 	}
-out:
 	return retval;
+error:
+	return retval | FLASH_ERASE_ERR;
 }
 
-static int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_offset, uint32_t write_count)
+int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_offset, uint32_t write_count)
 {
 	int retval = 0;
 	uint32_t cur_offset = write_offset % SPIFLASH_PAGE_SIZE;
@@ -502,91 +500,80 @@ static int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_
 		}
 		cur_offset = 0;
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-		retval |= flash_tx(spi_base, SPIFLASH_WRITE_ENABLE);
+		retval |= flash_tx(spi_base, SPIFLASH_WRITE_ENABLE, true);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-		retval |= flash_tx(spi_base, SPIFLASH_PAGE_PROGRAM);
+		retval |= flash_tx(spi_base, SPIFLASH_PAGE_PROGRAM, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, write_offset >> 16);
+		retval |= flash_tx(spi_base, write_offset >> 16, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, write_offset >> 8);
+		retval |= flash_tx(spi_base, write_offset >> 8, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
-		retval |= flash_tx(spi_base, write_offset);
+		retval |= flash_tx(spi_base, write_offset, false);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
 		for (int i = 0;i < cur_count;i++) {
-			retval |= flash_tx(spi_base, *(src_address + i));
+			retval |= flash_tx(spi_base, *(src_address + i), false);
 			if (retval != NUSPI_OK) {
-				retval |= FLASH_WRITE_ERR;
-				goto out;
+				goto error;
 			}
 		}
 		nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 		retval |= flash_wip(spi_base);
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_WRITE_ERR;
-			goto out;
+			goto error;
 		}
 		src_address += cur_count;
 		write_offset += cur_count;
 		write_count -= cur_count;
 	}
-out:
 	return retval;
+error:
+	return retval | FLASH_WRITE_ERR;
 }
 
-static int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, uint32_t read_count)
+int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, uint32_t read_count)
 {
 	int retval = 0;
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_HOLD);
-	retval |= flash_tx(spi_base, SPIFLASH_READ);
+	retval |= flash_tx(spi_base, SPIFLASH_READ, false);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_READ_ERR;
-		goto out;
+		goto error;
 	}
-	retval |= flash_tx(spi_base, read_offset >> 16);
+	retval |= flash_tx(spi_base, read_offset >> 16, false);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_READ_ERR;
-		goto out;
+		goto error;
 	}
-	retval |= flash_tx(spi_base, read_offset >> 8);
+	retval |= flash_tx(spi_base, read_offset >> 8, false);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_READ_ERR;
-		goto out;
+		goto error;
 	}
-	retval |= flash_tx(spi_base, read_offset);
+	retval |= flash_tx(spi_base, read_offset, true);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_READ_ERR;
-		goto out;
+		goto error;
 	}
 	for (int i = 0;i < read_count;i++) {
 		retval |= flash_rx(spi_base, (dst_address + i));
 		if (retval != NUSPI_OK) {
-			retval |= FLASH_READ_ERR;
-			goto out;
+			goto error;
 		}
 	}
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	retval |= flash_wip(spi_base);
 	if (retval != NUSPI_OK) {
-		retval |= FLASH_READ_ERR;
-		goto out;
+		goto error;
 	}
-out:
 	return retval;
+error:
+	return retval | FLASH_READ_ERR;
 }
