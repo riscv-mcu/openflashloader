@@ -47,7 +47,7 @@ openocd-flashloader
 
 ## Secondary Development
 
-### Use Nuclie's SPI
+### Use Nuclei's SPI
 
 #### Execute Procedure
 
@@ -79,9 +79,11 @@ int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1, uint32_t para
 
 **Description**
 
+This function is called for any Flash operation. Mainly used to select functions, disable nuspi hardware mode、set default DIR and read nuspi version.
+
 **Parameters**
 
-* cs: mode select.
+* cs: function select.
 * spi_base: SPI base address.
 * params1: params.
 * params2: params.
@@ -135,6 +137,8 @@ int flash_init(uint32_t *spi_base);
 ```
 
 **Description**
+
+Initialize nuspi、Reset Flash、 Read flash ID and return the flash ID.
 
 **Parameters**
 
@@ -245,6 +249,8 @@ int flash_erase(uint32_t *spi_base, uint32_t first_addr, uint32_t end_addr);
 
 **Description**
 
+Erases Flash space between **first_addr** and **end_addr**.
+
 **Parameters**
 
 * spi_base: SPI base address.
@@ -313,6 +319,8 @@ int flash_write(uint32_t *spi_base, uint8_t* src_address, uint32_t write_offset,
 ```
 
 **Description**
+
+Write the **write_count** data from **src_address** to flash's **write_offset**.
 
 **Parameters**
 
@@ -398,6 +406,8 @@ int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, u
 
 **Description**
 
+Read the **read_count** data from flash's **read_offset** to **dst_address**.
+
 **Parameters**
 
 * spi_base: SPI base address.
@@ -469,4 +479,4 @@ error:
 
 
 
-### Not use Nuclie's SPI
+### Not use Nuclei's SPI
