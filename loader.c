@@ -164,6 +164,7 @@ int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1,
 	unsigned long params1_temp = params1;
 	nuspi_disable_hw_mode(spi_base);
 	nuspi_read_reg(spi_base, NUSPI_REG_VERSION, &nuspi_version);
+	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	switch (cs)
 	{
 	case ERASE_CMD:
@@ -303,7 +304,6 @@ static inline int nuspi_rx(uint32_t *spi_base, uint8_t *out)
 
 static int flash_tx(uint32_t *spi_base, uint8_t in, bool txwm) {
 	int retval = 0;
-	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	retval |= nuspi_tx(spi_base, in);
 	if (retval != NUSPI_OK) {
 		goto error;
@@ -322,7 +322,6 @@ error:
 static int flash_rx(uint32_t *spi_base, uint8_t *out) {
 	int retval = 0;
 	uint8_t value = 0;
-	nuspi_set_dir(spi_base, NUSPI_DIR_RX);
 	retval |= nuspi_tx(spi_base, 00);
 	if (retval != NUSPI_OK) {
 		goto error;
@@ -346,6 +345,7 @@ static int flash_wip(uint32_t *spi_base)
 	if (retval != NUSPI_OK) {
 		goto error;
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_RX);
 	while (1) {
 		retval |= flash_rx(spi_base, &value);
 		if (retval != NUSPI_OK) {
@@ -355,6 +355,7 @@ static int flash_wip(uint32_t *spi_base)
 			break;
 		}
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	return retval;
 error:
@@ -434,12 +435,14 @@ int flash_init(uint32_t *spi_base)
 	if (retval != NUSPI_OK) {
 		goto error;
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_RX);
 	for (int i = 0;i < 3;i++) {
 		if (NUSPI_OK != flash_rx(spi_base, &rx)) {
 			goto error;
 		}
 		retval |= rx << (i * 8);
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	return retval;
 error:
@@ -562,12 +565,14 @@ int flash_read(uint32_t *spi_base, uint8_t* dst_address, uint32_t read_offset, u
 	if (retval != NUSPI_OK) {
 		goto error;
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_RX);
 	for (int i = 0;i < read_count;i++) {
 		retval |= flash_rx(spi_base, (dst_address + i));
 		if (retval != NUSPI_OK) {
 			goto error;
 		}
 	}
+	nuspi_set_dir(spi_base, NUSPI_DIR_TX);
 	nuspi_write_reg(spi_base, NUSPI_REG_CSMODE, NUSPI_CSMODE_AUTO);
 	retval |= flash_wip(spi_base);
 	if (retval != NUSPI_OK) {
