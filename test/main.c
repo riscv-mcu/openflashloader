@@ -1,13 +1,15 @@
 #include <stdio.h>
 
-/*==== Loader ====*/
-#define ERASE_CMD			(1)
-#define WRITE_CMD			(2)
-#define READ_CMD			(3)
-#define PROBE_CMD			(4)
+#define DEBUG_INFO          (0)
 
-#define TEST_OFFSET (0x00)
-#define TEST_COUNT (0x10000)
+/*==== Loader ====*/
+#define ERASE_CMD           (1)
+#define WRITE_CMD           (2)
+#define READ_CMD            (3)
+#define PROBE_CMD           (4)
+
+#define TEST_OFFSET         (0x00)
+#define TEST_COUNT          (0x10000)
 
 uint8_t write_buf[TEST_COUNT] = {0};
 uint8_t read_buf[TEST_COUNT] = {0};
@@ -47,48 +49,66 @@ void main(void)
     /* flash init */
     cs = PROBE_CMD;
     flash_id = loader_main(cs, spi_base, params1, params2, params3);
+    #if DEBUG_INFO
     printf("The current Flash ID is %#x\r\n", flash_id);
+    #endif
 
     /* flash erase */
     cs = ERASE_CMD;
-    params1 = TEST_OFFSET;//first_addr
+    params1 = TEST_OFFSET;//start_addr
     params2 = TEST_OFFSET + TEST_COUNT;//end_addr
     retval = loader_main(cs, spi_base, params1, params2, params3);
     if (retval) {
+        #if DEBUG_INFO
         printf("The erase error code is %#x\r\n", flash_id);
+        #endif
     } else {
+        #if DEBUG_INFO
         printf("Erase success\r\n");
+        #endif
     }
 
     /* flash write */
     cs = WRITE_CMD;
-    params1 = write_buf;//src_address
-    params2 = TEST_OFFSET;//write_offset
-    params3 = TEST_COUNT;//write_count
+    params1 = write_buf;//buffer
+    params2 = TEST_OFFSET;//offset
+    params3 = TEST_COUNT;//count
     retval = loader_main(cs, spi_base, params1, params2, params3);
     if (retval) {
+        #if DEBUG_INFO
         printf("The write error code is %#x\r\n", flash_id);
+        #endif
     } else {
+        #if DEBUG_INFO
         printf("Write success\r\n");
+        #endif
     }
 
-    /* flash write */
-    cs = WRITE_CMD;
-    params1 = read_buf;//dst_address
-    params2 = TEST_OFFSET;//read_offset
-    params3 = TEST_COUNT;//read_count
+    /* flash read */
+    cs = READ_CMD;
+    params1 = read_buf;//buffer
+    params2 = TEST_OFFSET;//offset
+    params3 = TEST_COUNT;//count
     retval = loader_main(cs, spi_base, params1, params2, params3);
     if (retval) {
+        #if DEBUG_INFO
         printf("The write error code is %#x\r\n", flash_id);
+        #endif
     } else {
+        #if DEBUG_INFO
         printf("Write success\r\n");
+        #endif
     }
 
     /* verify */
     if (memory_compare(write_buf, read_buf, TEST_COUNT)) {
+        #if DEBUG_INFO
         printf("Test fail\r\n");
+        #endif
     } else {
+        #if DEBUG_INFO
         printf("Test pass\r\n");
+        #endif
     }
 
     while (1) {}

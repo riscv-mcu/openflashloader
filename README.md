@@ -28,7 +28,7 @@ openocd-flashloader
 * **startup.S**
 
   A startup file.
-  
+
   > **Disable the use of global variables in flash loader.**
 
 ## How to use
@@ -53,7 +53,7 @@ openocd-flashloader
 
 #### Execute Procedure
 
-![procedure](procedure.png)
+![procedure](img/procedure.png)
 
 #### Loader Function
 
