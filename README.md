@@ -39,7 +39,8 @@ openocd-flashloader
 
 * step2
 
-  > make clean & make
+  > For loader mode: make MODE=loader ARCH=rv32 clean all
+  > For sdk mode: make MODE=sdk ARCH=rv64 clean all
 
 * step3
 

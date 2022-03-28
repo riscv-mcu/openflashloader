@@ -1,0 +1,26 @@
+TARGET = test_loader
+
+NUCLEI_SDK_ROOT ?= ../
+SPI ?= nuspi
+FLASH ?= w25q256fv
+ARCH ?= rv32
+
+ifeq ($(ARCH),rv32)
+RISCV_ARCH := rv32e
+RISCV_ABI := ilp32e
+RISCV_TUNE :=
+else
+RISCV_ARCH := rv64i
+RISCV_ABI := lp64
+RISCV_TUNE :=
+endif
+
+C_SRCS := loader/loader.c
+C_SRCS += spi/$(SPI).c
+C_SRCS += flash/$(FLASH).c
+C_SRCS += test/main.c
+ASM_SRCS := loader/startup.S
+
+INCDIRS := flash loader spi
+
+include $(NUCLEI_SDK_ROOT)/Build/Makefile.base

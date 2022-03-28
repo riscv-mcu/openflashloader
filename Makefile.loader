@@ -1,0 +1,76 @@
+CROSS_COMPILE ?= riscv-nuclei-elf-
+
+
+TARGET ?= loader
+ARCH ?= rv32
+O ?= build
+SPI ?= nuspi
+FLASH ?= w25q256fv
+
+CFLAGS := -nostdlib -nostartfiles -Wall -Os -fPIC -Wunused-result -g
+
+ifeq ($(ARCH),rv32)
+CFLAGS += -march=rv32e -mabi=ilp32e
+else
+CFLAGS += -march=rv64i -mabi=lp64
+endif
+
+## source control
+C_SRCS := loader/loader.c
+C_SRCS += spi/$(SPI).c
+C_SRCS += flash/$(FLASH).c
+ASM_SRCS := loader/startup.S
+
+LINKER_SCRIPT := loader/riscv.lds
+
+INCDIRS := flash loader spi
+
+## extra options
+CC      = $(CROSS_COMPILE)gcc
+OBJCOPY = $(CROSS_COMPILE)objcopy
+OBJDUMP = $(CROSS_COMPILE)objdump
+
+CFLAGS += $(addprefix -I,$(sort $(INCDIRS)))
+
+## output directory
+OUTDIR := $(O)/$(ARCH)
+
+## targets
+LOADER_PREFIX := $(OUTDIR)/$(TARGET)
+LOADER_ELF := $(LOADER_PREFIX).elf
+LOADER_BIN := $(LOADER_PREFIX).bin
+
+## objects
+ASM_OBJS := $(addprefix $(OUTDIR)/, $(ASM_SRCS:=.o))
+C_OBJS := $(addprefix $(OUTDIR)/, $(C_SRCS:=.o))
+
+ALL_SRCS := $(C_SRCS) $(ASM_SRCS)
+ALL_OBJS := $(ASM_OBJS) $(C_OBJS)
+ALL_DEPS := $(ALL_OBJS:=.d)
+
+MKDEP_OPT = -MMD -MT $@ -MF $@.d
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(ALL_DEPS)
+endif
+
+all: $(LOADER_BIN)
+
+.PHONY: clean all cleanall
+
+$(LOADER_BIN): $(LOADER_ELF)
+	$(OBJCOPY) -Obinary $< $@
+	$(OBJDUMP) -S $< > $(LOADER_PREFIX).dasm
+
+$(ALL_OBJS): $(OUTDIR)/%.o: %
+	@mkdir -p $(@D)
+	$(CC) -c $(CFLAGS) $(MKDEP_OPT) -o $@ $<
+
+$(LOADER_ELF): $(ALL_OBJS)
+	$(CC) $(CFLAGS) -T $(LINKER_SCRIPT) $^ -o $@
+
+clean:
+	rm -rf $(OUTDIR)
+
+cleanall:
+	rm -rf $(O)
