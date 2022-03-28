@@ -3,4 +3,5 @@
 *.verilog
 *.bin
 *.elf
+*.map
 build
