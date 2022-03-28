@@ -19,7 +19,7 @@ C_SRCS := loader/loader.c
 C_SRCS += spi/$(SPI).c
 C_SRCS += flash/$(FLASH).c
 C_SRCS += test/main.c
-ASM_SRCS := loader/startup.S
+ASM_SRCS :=
 
 INCDIRS := flash loader spi
 
