@@ -14,6 +14,8 @@
 /* FCTRL register */
 #define NUSPI_FCTRL_EN              (0x1)
 #define NUSPI_INSN_CMD_EN           (0x1)
+/* FMT register */
+#define NUSPI_FMT_DIR(x)            (((x) & 0x1) << 3)
 /* STATUS register */
 #define NUSPI_STAT_BUSY             (0x1 << 0)
 #define NUSPI_STAT_TXFULL           (0x1 << 4)
@@ -86,16 +88,16 @@ void spi_cs(uint32_t *spi_base, bool sel)
     }
 }
 
-int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
+int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len)
 {
     uint32_t times_out = 0;
-    uint32_t status = 0;
+    uint32_t value = 0;
     nuspi_set_dir(spi_base, NUSPI_DIR_TX);
     for (int i = 0;i < len;i++) {
         times_out = NUSPI_TX_TIMES_OUT;
         while (times_out--) {
-            nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
-            if (!(status & NUSPI_STAT_TXFULL)) {
+            nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &value);
+            if (!(value & NUSPI_STAT_TXFULL)) {
                 break;
             }
         }
@@ -106,8 +108,8 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
     }
     times_out = NUSPI_TX_TIMES_OUT;
     while (times_out--) {
-        nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
-        if (0 == (status & NUSPI_STAT_BUSY)) {
+        nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &value);
+        if (0 == (value & NUSPI_STAT_BUSY)) {
             break;
         }
     }
@@ -117,17 +119,17 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
     return 0;
 }
 
-int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len);
+int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len)
 {
     uint32_t times_out = 0;
     uint32_t value = 0;
-    uint32_t status = 0;
     nuspi_set_dir(spi_base, NUSPI_DIR_RX);
     for (int i = 0;i < len;i++) {
         times_out = NUSPI_RX_TIMES_OUT;
+        nuspi_write_reg(spi_base, NUSPI_REG_TXDATA, 0x00);
         while (times_out--) {
-            nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &status);
-            if (!(status & NUSPI_STAT_RXEMPTY)) {
+            nuspi_read_reg(spi_base, NUSPI_REG_STATUS, &value);
+            if (!(value & NUSPI_STAT_RXEMPTY)) {
                 break;
             }
         }

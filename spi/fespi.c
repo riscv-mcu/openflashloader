@@ -17,6 +17,8 @@
 /* FCTRL register */
 #define FESPI_FCTRL_EN              (0x1)
 #define FESPI_INSN_CMD_EN           (0x1)
+/* FMT register */
+#define FESPI_FMT_DIR(x)            (((x) & 0x1) << 3)
 /* STATUS register */
 #define FESPI_STAT_BUSY             (0x1 << 0)
 #define FESPI_STAT_TXFULL           (0x1 << 4)
@@ -54,19 +56,19 @@ void spi_init(uint32_t *spi_base)
     /* clear rxfifo */
     uint32_t status = 0;
     while (1) {
-        nuspi_read_reg(spi_base, FESPI_REG_RXDATA, &status);
-        nuspi_read_reg(spi_base, FESPI_REG_STATUS, &status);
+        fespi_read_reg(spi_base, FESPI_REG_RXDATA, &status);
+        fespi_read_reg(spi_base, FESPI_REG_STATUS, &status);
         if (status & FESPI_STAT_RXEMPTY) {
             break;
         }
     }
     /* init register */
-    nuspi_write_reg(spi_base, FESPI_REG_SCKMODE, 0x0);
-    nuspi_write_reg(spi_base, FESPI_REG_FORCE, 0x3);
-    nuspi_write_reg(spi_base, FESPI_REG_FCTRL, 0x0);
-    nuspi_write_reg(spi_base, FESPI_REG_FMT, 0x80008);
-    nuspi_write_reg(spi_base, FESPI_REG_FFMT, 0x30007);
-    nuspi_write_reg(spi_base, FESPI_REG_RXEDGE, 0x0);
+    fespi_write_reg(spi_base, FESPI_REG_SCKMODE, 0x0);
+    fespi_write_reg(spi_base, FESPI_REG_FORCE, 0x3);
+    fespi_write_reg(spi_base, FESPI_REG_FCTRL, 0x0);
+    fespi_write_reg(spi_base, FESPI_REG_FMT, 0x80008);
+    fespi_write_reg(spi_base, FESPI_REG_FFMT, 0x30007);
+    fespi_write_reg(spi_base, FESPI_REG_RXEDGE, 0x0);
 }
 
 void spi_hw(uint32_t *spi_base, bool sel)
@@ -89,16 +91,16 @@ void spi_cs(uint32_t *spi_base, bool sel)
     }
 }
 
-int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
+int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len)
 {
-	uint32_t times_out = 0;
-    uint32_t status = 0;
+    uint32_t times_out = 0;
+    uint32_t value = 0;
     fespi_set_dir(spi_base, FESPI_DIR_TX);
     for (int i = 0;i < len;i++) {
         times_out = FESPI_TX_TIMES_OUT;
         while (times_out--) {
-            fespi_read_reg(spi_base, FESPI_REG_TXDATA, &txfifo);
-            if (!(txfifo >> 31)) {
+            fespi_read_reg(spi_base, FESPI_REG_TXDATA, &value);
+            if (!(value >> 31)) {
                 break;
             }
         }
@@ -109,8 +111,8 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
     }
     times_out = FESPI_TX_TIMES_OUT;
     while (times_out--) {
-        fespi_read_reg(spi_base, FESPI_REG_IP, &ip);
-        if (ip & FESPI_IP_TXWM) {
+        fespi_read_reg(spi_base, FESPI_REG_IP, &value);
+        if (value & FESPI_IP_TXWM) {
             break;
         }
     }
@@ -120,14 +122,14 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len);
     return 0;
 }
 
-int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len);
+int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len)
 {
-	uint32_t times_out = 0;
+    uint32_t times_out = 0;
     uint32_t value = 0;
-    uint32_t status = 0;
     fespi_set_dir(spi_base, FESPI_DIR_RX);
     for (int i = 0;i < len;i++) {
         times_out = FESPI_RX_TIMES_OUT;
+        fespi_write_reg(spi_base, FESPI_REG_TXDATA, 0x00);
         while (times_out--) {
             fespi_read_reg(spi_base, FESPI_REG_RXDATA, &value);
             if (!(value >> 31)) {

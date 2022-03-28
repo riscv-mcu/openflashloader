@@ -118,6 +118,7 @@ int flash_write(uint32_t *spi_base, uint8_t* buffer, uint32_t offset, uint32_t c
         retval |= spi_tx(spi_base, value, 4);
         retval |= spi_tx(spi_base, buffer, cur_count);
         spi_cs(spi_base, false);
+        retval |= flash_wip(spi_base);
         buffer += cur_count;
         offset += cur_count;
         count -= cur_count;
@@ -144,6 +145,7 @@ int flash_read(uint32_t *spi_base, uint8_t* buffer, uint32_t offset, uint32_t co
     retval |= spi_tx(spi_base, value, 4);
     retval |= spi_rx(spi_base, buffer, count);
     spi_cs(spi_base, false);
+    retval |= flash_wip(spi_base);
     spi_hw(spi_base, true);
     if (retval) {
         return retval | RETURN_FLASH_READ_ERROR;

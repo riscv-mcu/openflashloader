@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 
 void spi_init(uint32_t *spi_base);
 void spi_hw(uint32_t *spi_base, bool sel);
