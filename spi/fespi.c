@@ -54,11 +54,10 @@ static inline void fespi_set_dir(uint32_t *spi_base, uint32_t dir)
 void spi_init(uint32_t *spi_base)
 {
     /* clear rxfifo */
-    uint32_t status = 0;
+    uint32_t value = 0;
     while (1) {
-        fespi_read_reg(spi_base, FESPI_REG_RXDATA, &status);
-        fespi_read_reg(spi_base, FESPI_REG_STATUS, &status);
-        if (status & FESPI_STAT_RXEMPTY) {
+        fespi_read_reg(spi_base, FESPI_REG_RXDATA, &value);
+        if (value >> 31) {
             break;
         }
     }
