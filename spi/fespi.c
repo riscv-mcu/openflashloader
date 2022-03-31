@@ -31,9 +31,6 @@
 #define FESPI_TX_TIMES_OUT          (500)
 #define FESPI_RX_TIMES_OUT          (500)
 
-#define RETURN_FESPI_TX_ERROR       (0x1 << 4)
-#define RETURN_FESPI_RX_ERROR       (0x1 << 5)
-
 static inline void fespi_read_reg(uint32_t volatile *spi_base, uint32_t offset, uint32_t *value)
 {
     *value = spi_base[offset / 4];
@@ -104,7 +101,7 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len)
             }
         }
         if (0 >= times_out) {
-            return RETURN_FESPI_TX_ERROR;
+            return RETURN_SPI_TX_ERROR;
         }
         fespi_write_reg(spi_base, FESPI_REG_TXDATA, in[i]);
     }
@@ -116,7 +113,7 @@ int spi_tx(uint32_t *spi_base, uint8_t *in, uint32_t len)
         }
     }
     if (0 >= times_out) {
-        return RETURN_FESPI_TX_ERROR;
+        return RETURN_SPI_TX_ERROR;
     }
     return 0;
 }
@@ -136,7 +133,7 @@ int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len)
             }
         }
         if (0 >= times_out) {
-            return RETURN_FESPI_RX_ERROR;
+            return RETURN_SPI_RX_ERROR;
         }
         out[i] = value & 0xff;
     }

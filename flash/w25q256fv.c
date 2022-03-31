@@ -14,11 +14,6 @@
 #define SPIFLASH_BLOCK_ERASE    0xD8 /* Block Erase */
 #define SPIFLASH_BLOCK_SIZE     0x10000
 
-#define RETURN_FLASH_WIP_ERROR        (0x1 << 0)
-#define RETURN_FLASH_ERASE_ERROR      (0x1 << 1)
-#define RETURN_FLASH_WRITE_ERROR      (0x1 << 2)
-#define RETURN_FLASH_READ_ERROR       (0x1 << 3)
-
 static inline int flash_wip(uint32_t *spi_base)
 {
     int retval = 0;

@@ -41,7 +41,7 @@ void main(void)
 
     /* flash loader in/out params */
     uint32_t cs = 0x00;
-    uint32_t *spi_base = (uint32_t*)0xF0040000;
+    uint32_t *spi_base = (uint32_t*)0x10014000;
     uint32_t params1 = 0x00;
     uint32_t params2 = 0x00;
     uint32_t params3 = 0x00;
