@@ -493,6 +493,8 @@ int spi_rx(uint32_t *spi_base, uint8_t *out, uint32_t len)
 ## How To Build & Use
 
 ```
+// SPI=custom-spi FLASH=custom-flash
+// the custom-spi and custom-flash need to be changed to match the spi and flash driver file name 
 // build loader
 make ARCH=rv32 MODE=loader SPI=custom-spi FLASH=custom-flash clean all
 make ARCH=rv64 MODE=loader SPI=custom-spi FLASH=custom-flash clean all
@@ -505,6 +507,7 @@ make ARCH=rv64 MODE=sdk SPI=custom-spi FLASH=custom-flash clean all
 
 ```
 // openocd flash bank configure
+// don't change custom below, it is used by openocd to recognize this is custom flash loader
 flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin [simulation]
 ```
 
