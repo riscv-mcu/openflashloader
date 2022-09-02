@@ -92,7 +92,6 @@ Erases Flash space between **start_addr** and **end_addr**.
 * 0: OK
 * Other: ERROR
 
-
 #### flash_write
 
 ****
@@ -118,7 +117,6 @@ Write the **count** data from **buffer** to flash's **offset**.
 
 * 0: OK
 * Other: ERROR
-
 
 #### flash_read
 
@@ -170,6 +168,14 @@ make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
 ```
 
+> Note:
+>
+> <mark>The 'fespi' and 'w25q256fv' should be changed to the driver names of customer's own SPI and FLASH.</mark>
+>
+> <mark>The **SPI** compile option is used to specify the spi driver source file without the suffix.</mark>
+>
+> <mark>The **FLASH** compile option is used to specify the flash driver source file without the suffix.</mark>
+
 ## How To Use
 
 ```
@@ -181,6 +187,14 @@ flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/risc
 // while [simulation] exist, the loader's timeout=0xFFFFFFFF
 flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin simulation
 ```
+
+> Note:
+>
+> <mark>'custom' is the keyword and should not be changed with others.</mark>
+>
+> <mark>In the current command **custom**  option can't be modified.</mark>
+>
+> <mark>**<loader_path>** option advised to write the full path,  because you maybe don't know where you are.</mark>
 
 ## Error Table
 
