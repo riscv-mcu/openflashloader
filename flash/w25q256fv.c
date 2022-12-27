@@ -61,7 +61,6 @@ int flash_erase(uint32_t *spi_base, uint32_t start_addr, uint32_t end_addr)
     /* erase flash */
     spi_hw(spi_base, false);
     for (int i = 0;i < sector_num;i++) {
-        curr_addr += i * SPIFLASH_BLOCK_SIZE;
         /* send write enable cmd */
         spi_cs(spi_base, true);
         value[0] = SPIFLASH_WRITE_ENABLE;
@@ -76,6 +75,7 @@ int flash_erase(uint32_t *spi_base, uint32_t start_addr, uint32_t end_addr)
         retval |= spi_tx(spi_base, value, 4);
         spi_cs(spi_base, false);
         retval |= flash_wip(spi_base);
+        curr_addr += SPIFLASH_BLOCK_SIZE;
     }
     spi_hw(spi_base, true);
     if (retval) {

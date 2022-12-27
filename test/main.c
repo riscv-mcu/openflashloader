@@ -95,11 +95,11 @@ void main(void)
     retval = loader_main(cs, spi_base, params1, params2, params3);
     if (retval) {
         #if DEBUG_INFO
-        printf("The write error code\r\n");
+        printf("The read error code\r\n");
         #endif
     } else {
         #if DEBUG_INFO
-        printf("Write success\r\n");
+        printf("read success\r\n");
         #endif
     }
 
