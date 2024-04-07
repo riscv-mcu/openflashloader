@@ -144,9 +144,45 @@ Read the **count** data from flash's **offset** to **buffer**.
 * 0: OK
 * Other: ERROR
 
-## How To Build
+## How To Use
+
+### Compile/Debug Self-Test
 
 ```
+// set NUCLEI_SDK_ROOT
+set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
+
+// compile/debug self-test with rv32 spi:nuspi.c flash:w25q256fv.c
+make ARCH=rv32 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
+make ARCH=rv32 MODE=sdk SPI=nuspi FLASH=w25q256fv debug
+
+// compile/debug self-test with rv64 spi:nuspi.c flash:w25q256fv.c
+make ARCH=rv64 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
+make ARCH=rv64 MODE=sdk SPI=nuspi FLASH=w25q256fv debug
+
+// compile/debug self-test with rv32 spi:fespi.c flash:w25q256fv.c
+make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
+make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv debug
+
+// compile/debug self-test with rv64 spi:fespi.c flash:w25q256fv.c
+make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
+make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv debug
+```
+
+> Note:
+>
+> <mark>The loader can only be compiled if self-test has passed.</mark>
+>
+> <mark>The **SPI** compile option is used to specify the spi driver source file without the suffix.</mark>
+>
+> <mark>The **FLASH** compile option is used to specify the flash driver source file without the suffix.</mark>
+
+### Compile Flashloader
+
+```
+// set NUCLEI_SDK_ROOT
+set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
+
 // build loader spi:nuspi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
@@ -154,33 +190,13 @@ make ARCH=rv64 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
 // build loader spi:fespi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=fespi FLASH=w25q256fv clean all
-
-/*===========================================================*/
-
-// build self-test spi:nuspi.c flash:w25q256fv.c
-set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
-make ARCH=rv32 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
-make ARCH=rv64 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
-
-// build self-test spi:fespi.c flash:w25q256fv.c
-set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
-make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
-make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
 ```
 
-> Note:
->
-> <mark>The 'fespi' and 'w25q256fv' should be changed to the driver names of customer's own SPI and FLASH.</mark>
->
-> <mark>The **SPI** compile option is used to specify the spi driver source file without the suffix.</mark>
->
-> <mark>The **FLASH** compile option is used to specify the flash driver source file without the suffix.</mark>
-
-## How To Use
+### Flash Bank Configuration
 
 ```
 // openocd flash bank configure command(only parameters in parentheses can be modified)
-flash bank $FLASHNAME custom <spi_xip> 0 0 0 $TARGETNAME <spi_base> <loader_path> [simulation]
+flash bank $FLASHNAME custom <xip_base> 0 0 0 $TARGETNAME <spi_base> <loader_path> [simulation]
 
 // openocd flash bank configure example
 flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin
