@@ -34,16 +34,24 @@ openocd-flashloader
 
 ## Execute Procedure
 
+Nuclei OpenOCD will load the flash loader binary which specified in openocd configuration file using ``flash bank name custom`` feature, see https://doc.nucleisys.com/nuclei_tools/openocd/intro.html#nuclei-customized-features
+
+The flash loader(loader/loader.c) binary will ``loader_main`` with parameters passed in openocd custom flash driver, see https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270
+
+> Nuclei OpenOCD source code can be found in https://github.com/riscv-mcu/riscv-openocd/
+>
+> Nuclei OpenOCD documentation can be found in https://doc.nucleisys.com/nuclei_tools/openocd/intro.html
+
 ![procedure](img/procedure.png)
 
-## Secondary Development
+## Prerequisites
 
-**The following conditions must be met**
+**The following environment must be setuped**
 
 - Nuclei Studio Version >= 2024.02, which contains prebuilt gcc and openocd
 - Don't use any global variables.(**Warning**)
 
-### Function Overview
+### Flash Driver API
 
 This section mainly describe the flash driver API you must implemented for your own flash driver.
 
@@ -233,7 +241,7 @@ make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv debug
 When your flash loader implementation is done and validated using your environment,
 you can build this flashloader binary and use it with openocd.
 
-```
+```shell
 # build loader spi:nuspi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
@@ -243,7 +251,7 @@ make ARCH=rv32 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 ```
 
-Flashloader can be found in ``build/rv32/loader.bin`` for ``ARCH=rv32``,
+**Flashloader can be found** in ``build/rv32/loader.bin`` for ``ARCH=rv32``,
 and ``build/rv64/loader.bin`` for ``ARCH=rv64``.
 
 ### Flash Bank Configuration
@@ -257,15 +265,18 @@ file for Nuclei HBird Debugger to access to Nuclei Evaluation SoC, please see
 
 For Nuclei OpenOCD guide, see https://doc.nucleisys.com/nuclei_tools/openocd/intro.html
 
-```
+```shell
 # openocd flash bank configure command(only parameters in parentheses can be modified)
 # For detail flash bank explaination, see openocd/doc/pdf/openocd.pdf
 flash bank $FLASHNAME custom <xip_base> 0 0 0 $TARGETNAME <spi_base> <loader_path> [simulation]
 
 # openocd flash bank configure example
-flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin
+# Please change 0x20000000 - the spiflash xip address to the real address of your spiflash xip address
+# please change 0x10014000 - the spi base to access the spiflash to the real spi base to access your spiflash or some other value required by you
+# please change /path/to/loader.bin to the real path of your flash loader binary
+flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 /path/to/loader.bin
 # while [simulation] exist, the loader's timeout=0xFFFFFFFF
-flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin simulation
+flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 /path/to/loader.bin simulation
 ```
 
 If the configuration is modified, eg. call it ``openocd.cfg``, then you can use run following command to test it:
@@ -274,11 +285,11 @@ If the configuration is modified, eg. call it ``openocd.cfg``, then you can use 
 openocd -f /path/to/openocd.cfg
 ~~~
 
-> Note:
+> [!NOTE]
 >
-> <mark>'custom' is the keyword and should not be changed with others.</mark>
+> <mark> **custom** is the keyword and should not be changed with others.</mark>
 >
-> <mark>In the current command **custom**  option can't be modified.</mark>
+> <mark>In the current command **custom** option can't be modified.</mark>
 >
 > <mark>**<loader_path>** option advised to write the full path,  because you maybe don't know where you are.</mark>
 
