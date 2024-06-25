@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdint.h>
 
 #define RETURN_FLASH_WIP_ERROR        (0x1 << 0)
 #define RETURN_FLASH_ERASE_ERROR      (0x1 << 1)

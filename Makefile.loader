@@ -1,4 +1,9 @@
-CROSS_COMPILE ?= riscv-nuclei-elf-
+# When using Nuclei RISC-V Toolchain <= 2022.12
+#CROSS_COMPILE ?= riscv-nuclei-elf-
+
+# When using Nuclei RISC-V Toolchain >= 2023.10
+# see https://github.com/riscv-mcu/riscv-gnu-toolchain/releases
+CROSS_COMPILE ?= riscv64-unknown-elf-
 
 
 TARGET ?= loader

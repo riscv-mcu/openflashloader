@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #define RETURN_SPI_TX_ERROR       (0x1 << 4)

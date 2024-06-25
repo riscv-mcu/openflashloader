@@ -22,7 +22,7 @@ openocd-flashloader
 ├── spi                        // SPI Driver Directory
 │   ├── spi.h                  // SPI Driver's API
 │   ├── nuspi.c                // Nuclei SPI Driver
-│   ├── fespi.c                // Sfive SPI Driver
+│   ├── fespi.c                // Sifive SPI Driver
 ├── test                       // Loader Tests Directory
 │   ├── main.c                 // Loader Self-test Code
 ├── .gitignore                 // Git Ignore File
@@ -40,10 +40,17 @@ openocd-flashloader
 
 **The following conditions must be met**
 
-- OpenOCD's Version >= 2022.04
+- Nuclei Studio Version >= 2024.02, which contains prebuilt gcc and openocd
 - Don't use any global variables.(**Warning**)
 
 ### Function Overview
+
+This section mainly describe the flash driver API you must implemented for your own flash driver.
+
+If some argument is not suitable for you, you can ignore it or use it as your requirement.
+
+eg. ``spi_base`` in this flash driver API maybe not suitable for the case which flash are not interfaced via
+spi, but it is passed to this via openocd ``flash bank`` command, see https://doc.nucleisys.com/nuclei_tools/openocd/intro.html#nuclei-customized-features
 
 #### flash_init
 
@@ -57,7 +64,7 @@ int flash_init(uint32_t *spi_base);
 
 **Description**
 
-Initialize nuspi,  Read flash ID and return the flash ID.
+Initialize nuspi, read flash ID and return the flash ID.
 
 **Parameters**
 
@@ -146,30 +153,72 @@ Read the **count** data from flash's **offset** to **buffer**.
 
 ## How To Use
 
+Implement your own flash driver to match above ``Flash driver API``, this flash loader is called via openocd
+**custom** loader developed in https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270.
+
+- Flash driver reference: ``flash/w25q256fv.c``
+- SPI driver reference maybe used by flash: ``spi/nuspi.c``
+
+To compile this flashloader code, you need to install Nuclei RISC-V Toolchain or Nuclei Studio(preferred, which contains the toolchain in ``<Nuclei Studio>/toolchain/gcc``), see https://nucleisys.com/download.php#tools
+
+You can directly setup environment **PATH** via command line before you build flashloader.
+
+~~~shell
+# Assume that you have downloaded Nuclei Studio latest version, currently 2024.02
+# Please change NUCLEI_TOOL_ROOT to the real path of where your toolchain folder located in windows or linux
+
+# Only execute commands below, if you are in windows cmd terminal
+set NUCLEI_TOOL_ROOT=C:\NucleiStudio\toolchain
+set PATH=%NUCLEI_TOOL_ROOT%\gcc\bin;%NUCLEI_TOOL_ROOT%\openocd\bin;%NUCLEI_TOOL_ROOT%\build-tools\bin;%NUCLEI_TOOL_ROOT%\qemu\bin;%PATH%
+
+# Only execute commands below, if you are in linux bash terminal
+NUCLEI_TOOL_ROOT=~/NucleiStudio/toolchain
+export PATH=$NUCLEI_TOOL_ROOT/gcc/bin:$NUCLEI_TOOL_ROOT/openocd/bin:$NUCLEI_TOOL_ROOT/qemu/bin:$PATH
+~~~
+
+In this repo, we provide sample flash loader implementation code which can be directly used with our Nuclei Evaluation SoC(SPI=nuspi FLASH=w25q256fv),
+which means you can check and verify it directly without any modification to see how it will work.
+
+For Nuclei Evalation SoC doc, please contact with our support engineer to get it.
+
 ### Compile/Debug Self-Test
 
-```
-// set NUCLEI_SDK_ROOT
+This self test code in ``test/main.c`` is mainly used to validate whether the loader implementation
+is ok or not.
+
+Here we use [Nuclei SDK](https://github.com/Nuclei-Software/nuclei-sdk) as self-test code
+executing environment, **if your board is not yet supported by Nuclei SDK**, you will not be
+able to do this test, you will need to port this selftest code in `test/main.c` to your environment,
+the required other source files see ``Makefile.sdk``
+
+Here below are just some sample commands when you are using nuclei sdk to test and validate
+your flash loader implementation.
+
+```shell
+## set NUCLEI_SDK_ROOT variable required by this self test code, see Makefile.sdk
 set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
 
-// compile/debug self-test with rv32 spi:nuspi.c flash:w25q256fv.c
+## SPI and FLASH make variable should be changed to match your real spi and flash driver name
+## Here list some sample build command and debug command using gdb
+
+## compile/debug self-test with rv32 spi:nuspi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
 make ARCH=rv32 MODE=sdk SPI=nuspi FLASH=w25q256fv debug
 
-// compile/debug self-test with rv64 spi:nuspi.c flash:w25q256fv.c
+## compile/debug self-test with rv64 spi:nuspi.c flash:w25q256fv.c
 make ARCH=rv64 MODE=sdk SPI=nuspi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=sdk SPI=nuspi FLASH=w25q256fv debug
 
-// compile/debug self-test with rv32 spi:fespi.c flash:w25q256fv.c
+## compile/debug self-test with rv32 spi:fespi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv32 MODE=sdk SPI=fespi FLASH=w25q256fv debug
 
-// compile/debug self-test with rv64 spi:fespi.c flash:w25q256fv.c
+## compile/debug self-test with rv64 spi:fespi.c flash:w25q256fv.c
 make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv debug
 ```
 
-> Note:
+> [!NOTE]
 >
 > <mark>The loader can only be compiled if self-test has passed.</mark>
 >
@@ -179,30 +228,49 @@ make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv debug
 
 ### Compile Flashloader
 
-```
-// set NUCLEI_SDK_ROOT
-set NUCLEI_SDK_ROOT=D:\Nuclei_Work\Git\nuclei-sdk
+When your flash loader implementation is done and validated using your environment,
+you can build this flashloader binary and use it with openocd.
 
-// build loader spi:nuspi.c flash:w25q256fv.c
+```
+# build loader spi:nuspi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=nuspi FLASH=w25q256fv clean all
 
-// build loader spi:fespi.c flash:w25q256fv.c
+# build loader spi:fespi.c flash:w25q256fv.c
 make ARCH=rv32 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 make ARCH=rv64 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 ```
 
+Flashloader can be found in ``build/rv32/loader.bin`` for ``ARCH=rv32``,
+and ``build/rv64/loader.bin`` for ``ARCH=rv64``.
+
 ### Flash Bank Configuration
 
+If your flashloader binary is validated and compiled successfully with above steps, now you can
+use it with openocd now, you need to modify your openocd configuration file, sample configuration
+file for Nuclei HBird Debugger to access to Nuclei Evaluation SoC, please see
+
+- https://github.com/Nuclei-Software/nuclei-sdk/blob/develop/SoC/evalsoc/Board/nuclei_fpga_eval/openocd_evalsoc.cfg
+- https://github.com/Nuclei-Software/nuclei-sdk/blob/develop/SoC/gd32vf103/Board/gd32vf103v_rvstar/openocd_gd32vf103.cfg
+
+For Nuclei OpenOCD guide, see https://doc.nucleisys.com/nuclei_tools/openocd/intro.html
+
 ```
-// openocd flash bank configure command(only parameters in parentheses can be modified)
+# openocd flash bank configure command(only parameters in parentheses can be modified)
+# For detail flash bank explaination, see openocd/doc/pdf/openocd.pdf
 flash bank $FLASHNAME custom <xip_base> 0 0 0 $TARGETNAME <spi_base> <loader_path> [simulation]
 
-// openocd flash bank configure example
+# openocd flash bank configure example
 flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin
-// while [simulation] exist, the loader's timeout=0xFFFFFFFF
+# while [simulation] exist, the loader's timeout=0xFFFFFFFF
 flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/riscv.bin simulation
 ```
+
+If the configuration is modified, eg. call it ``openocd.cfg``, then you can use run following command to test it:
+
+~~~shell
+openocd -f /path/to/openocd.cfg
+~~~
 
 > Note:
 >
@@ -222,6 +290,5 @@ flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 ~/work/risc
 | RETURN_FLASH_ERASE_ERROR | 0x1 << 1  |
 | RETURN_FLASH_WRITE_ERROR | 0x1 << 2  |
 | RETURN_FLASH_READ_ERROR  | 0x1 << 3  |
-|                          |           |
 | RETURN_SPI_TX_ERROR      | 0x1 << 4  |
 | RETURN_SPI_RX_ERROR      | 0x1 << 5  |

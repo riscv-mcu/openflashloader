@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 #define DEBUG_INFO          (0)
 
