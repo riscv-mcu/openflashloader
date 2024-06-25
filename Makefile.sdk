@@ -1,6 +1,6 @@
 TARGET = test_loader
 
-# You can change this NUCLEI_SDK_ROOT to where your nuclei sdk located
+# TODO: You can change this NUCLEI_SDK_ROOT to where your nuclei sdk located
 NUCLEI_SDK_ROOT ?= ../
 
 SPI ?= nuspi
@@ -8,10 +8,12 @@ FLASH ?= w25q256fv
 ARCH ?= rv32
 
 ifeq ($(ARCH),rv32)
+CORE := n300fd
 RISCV_ARCH := rv32imac
 RISCV_ABI := ilp32
 RISCV_TUNE :=
 else
+CORE := nx900fd
 RISCV_ARCH := rv64imac
 RISCV_ABI := lp64
 RISCV_TUNE :=
