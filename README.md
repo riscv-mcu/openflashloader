@@ -186,6 +186,8 @@ For Nuclei Evalation SoC doc, please contact with our support engineer to get it
 This self test code in ``test/main.c`` is mainly used to validate whether the loader implementation
 is ok or not.
 
+> You need to check **TODO** in this ``test/main.c``
+
 Here we use [Nuclei SDK](https://github.com/Nuclei-Software/nuclei-sdk) as self-test code
 executing environment, **if your board is not yet supported by Nuclei SDK**, you will not be
 able to do this test, you will need to port this selftest code in `test/main.c` to your environment,

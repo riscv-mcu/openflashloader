@@ -55,11 +55,11 @@ ALL_DEPS := $(ALL_OBJS:=.d)
 
 MKDEP_OPT = -MMD -MT $@ -MF $@.d
 
+all: $(LOADER_BIN)
+
 ifneq ($(MAKECMDGOALS),clean)
 -include $(ALL_DEPS)
 endif
-
-all: $(LOADER_BIN)
 
 .PHONY: clean all cleanall
 
