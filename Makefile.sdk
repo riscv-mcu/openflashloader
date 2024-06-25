@@ -21,6 +21,9 @@ C_SRCS := loader/loader.c
 C_SRCS += spi/$(SPI).c
 C_SRCS += flash/$(FLASH).c
 C_SRCS += test/main.c
+
+# loader/startup.S is not used by this self test
+# It is only used by loader itself
 ASM_SRCS :=
 
 INCDIRS := flash loader spi
