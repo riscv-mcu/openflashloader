@@ -42,10 +42,11 @@ int memory_compare(uint8_t* src, uint8_t* dst, uint32_t len)
 
 extern int loader_main(uint32_t cs, uint32_t *spi_base, uint32_t params1, uint32_t params2, uint32_t params3);
 
-void main(void)
+int main(void)
 {
     int flash_id = 0;
     int retval = 0;
+    int ret = 0;
 
     /* flash loader in/out params */
     uint32_t cs = 0x00;
@@ -77,6 +78,7 @@ void main(void)
         #if DEBUG_INFO
         printf("The erase error code\r\n");
         #endif
+        ret |= 0x1;
     } else {
         #if DEBUG_INFO
         printf("Erase success\r\n");
@@ -93,6 +95,7 @@ void main(void)
         #if DEBUG_INFO
         printf("The write error code\r\n");
         #endif
+        ret |= 0x2;
     } else {
         #if DEBUG_INFO
         printf("Write success\r\n");
@@ -109,6 +112,7 @@ void main(void)
         #if DEBUG_INFO
         printf("The read error code\r\n");
         #endif
+        ret |= 0x4;
     } else {
         #if DEBUG_INFO
         printf("read success\r\n");
@@ -120,11 +124,12 @@ void main(void)
         #if DEBUG_INFO
         printf("Test fail\r\n");
         #endif
+        ret |= 0x5;
     } else {
         #if DEBUG_INFO
         printf("Test pass\r\n");
         #endif
     }
 
-    while (1) {}
+    return ret;
 }
