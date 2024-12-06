@@ -43,13 +43,11 @@ jobs:
           sudo apt-get -q update
           sudo apt install -yq python3 python3-pip unzip libz-dev libssl-dev libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev libncursesw5-dev libncursesw5 libgmp-dev libmpfr-dev libmpc-dev
           sudo python3 -m pip install -q --upgrade pip
-          # install to user local storage
-          # ERROR: Cannot uninstall 'pyserial'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.
-          pip3 install -q -r tools/scripts/requirements.txt
           mkdir -p prebuilt_tools
           cd prebuilt_tools
-          echo "Prepare Nuclei Toolchain......"
-          toolzip=nuclei_riscv_newlibc_prebuilt_linux64_2024.06.tar.bz2
+          TOOLVER=2024.06
+          echo "Prepare Nuclei Toolchain $TOOLVER ......"
+          toolzip=nuclei_riscv_newlibc_prebuilt_linux64_${TOOLVER}.tar.bz2
           if [ ! -e $toolzip ] ; then
             echo "Download Nuclei toolchain now!"
             wget --progress=dot:giga --no-check-certificate https://www.nucleisys.com/upload/files/toochain/gcc/$toolzip
@@ -57,8 +55,8 @@ jobs:
             md5sum $toolzip
           fi
           tar -xjf $toolzip
-          echo "Prepare Nuclei QEMU......"
-          toolzip=nuclei-qemu-2024.06-linux-x64.tar.gz
+          echo "Prepare Nuclei QEMU $TOOLVER ......."
+          toolzip=nuclei-qemu-${TOOLVER}-linux-x64.tar.gz
           if [ ! -e $toolzip ] ; then
             echo "Download Nuclei qemu now!"
             wget --progress=dot:giga --no-check-certificate https://www.nucleisys.com/upload/files/toochain/qemu/$toolzip
@@ -85,6 +83,7 @@ jobs:
       run: |
         echo "Setup Nuclei SDK build environment"
         cd nuclei-sdk
+        git describe --tags --always
         source setup.sh
         cd ..
         echo "Set NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
