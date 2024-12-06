@@ -37,7 +37,7 @@ jobs:
           prebuilt_tools/*.tar.gz
         key: build
 
-    - name: Prepare Tools for Ubuntu
+    - name: Prepare Tools
       if: startsWith(matrix.os, 'ubuntu')
       run: |
           sudo apt-get -q update
@@ -81,31 +81,8 @@ jobs:
 
     - name: Build and Test Flashloader
       run: |
-        echo "Setup Nuclei SDK build environment"
-        cd nuclei-sdk
-        git describe --tags --always
-        source setup.sh
-        cd ..
         echo "Set NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
         export NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk
+        echo "Start to do freeloader build testing"
+        bash .github/build.sh
 
-        echo "Start to do flashloader build test in different build mode"
-        for mode in "sdk" "loader"; do
-            for arch in "rv32" "rv64"; do
-                for spi in "nuspi" "fespi"; do
-                    makeflags="MODE=$mode ARCH=$arch SPI=$spi FLASH=w25q256fv"
-                    echo "Clean and Build freeloader for $makeflags"
-                    make $makeflags clean all
-                    if [ "$SPI" == "fespi" ] ; then
-                        make $makeflags clean
-                        echo "Test in qemu and check whether pass or fail"
-                        timeout 60s make $makeflags SIMU=qemu run_qemu
-                        if [ "x$?" == "x0" ] ; then
-                            echo "Test in qemu for $makeflags: PASS"
-                        else
-                            echo "Test in qemu for $makeflags: FAIL"
-                        fi
-                    fi
-                done
-            done
-        done
