@@ -1,8 +1,15 @@
 # Openocd-Flashloader
 
+[![Build OpenOCD Flash Loader](https://github.com/riscv-mcu/openflashloader/actions/workflows/build.yaml/badge.svg)](https://github.com/riscv-mcu/openflashloader/actions/workflows/build.yaml)
+
 ## Introduction
 
-With the increasing number of customers, the standard OpenOCD can no longer met the market demand. In order to enable customers to customize the Flash driver and Loader algorithm of OpenOCD without recompiling the OpenOCD tool, OpenOCD-FlashLoader perfectly solves this problem. Please refer to the following description for details.
+With the increasing number of customers, the standard OpenOCD can no longer met the market demand.
+
+In order to enable customers to customize the flash driver and loader algorithm of OpenOCD without recompiling the OpenOCD tool,
+OpenOCD flashLoader perfectly solves this problem.
+
+Please refer to the following description for details.
 
 ## Directory Structure
 
@@ -48,7 +55,7 @@ The flash loader(loader/loader.c) binary will ``loader_main`` with parameters pa
 
 **The following environment must be setuped**
 
-- Nuclei Studio Version >= 2024.02, which contains prebuilt gcc and openocd
+- **Nuclei Studio Version >= 2024.02**, which contains prebuilt gcc and openocd
 - Don't use any global variables.(**Warning**)
 
 ### Flash Driver API
