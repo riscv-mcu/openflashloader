@@ -45,6 +45,7 @@ jobs:
           sudo python3 -m pip install -q --upgrade pip
           mkdir -p prebuilt_tools
           cd prebuilt_tools
+          TOOLROOT=$(pwd)
           TOOLVER=2024.06
           echo "Prepare Nuclei Toolchain $TOOLVER ......"
           toolzip=nuclei_riscv_newlibc_prebuilt_linux64_${TOOLVER}.tar.bz2
@@ -76,7 +77,7 @@ jobs:
           echo "Clone Nuclei SDK using branch $SDKBRANCH"
           git clone -b $SDKBRANCH --depth 1 https://github.com/Nuclei-Software/nuclei-sdk
           cd nuclei-sdk
-          echo "NUCLEI_TOOL_ROOT=$(pwd)/prebuilt_tools" > setup_config.sh
+          echo "NUCLEI_TOOL_ROOT=${TOOLROOT}" > setup_config.sh
           cd ..
 
     - name: Build and Test Flashloader
