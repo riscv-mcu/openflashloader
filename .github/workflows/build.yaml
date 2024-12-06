@@ -74,7 +74,7 @@ jobs:
           cd ..
           SDKBRANCH=${{ matrix.sdkbranch }}
           echo "Clone Nuclei SDK using branch $SDKBRANCH"
-          git clone -b $SDKBRANCH -depth 1 https://github.com/Nuclei-Software/nuclei-sdk
+          git clone -b $SDKBRANCH --depth 1 https://github.com/Nuclei-Software/nuclei-sdk
           cd nuclei-sdk
           echo "NUCLEI_TOOL_ROOT=$(pwd)/prebuilt_tools" > setup_config.sh
           cd ..
