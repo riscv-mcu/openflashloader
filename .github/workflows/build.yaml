@@ -87,7 +87,7 @@ jobs:
         source setup.sh
         cd ..
         echo "Set NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
-        export NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
+        export NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk
 
         echo "Start to do flashloader build test in different build mode"
         for mode in "sdk" "loader"; do
