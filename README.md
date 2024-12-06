@@ -57,9 +57,8 @@ The flash loader(loader/loader.c) binary will ``loader_main`` with parameters pa
 
 - **Nuclei Studio Version >= 2024.02**, which contains prebuilt gcc and openocd
 
-> [!WARNING]
-
-- **WARNING** Don't use any global variables in flashloader implementation source code.
+> [!IMPORTANT] 
+> **WARNING** Don't use any global variables in flashloader implementation source code.
 
 ### Flash Driver API
 
