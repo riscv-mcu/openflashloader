@@ -1,6 +1,8 @@
 #include "flash.h"
 #include "spi.h"
 
+/* WARNING: NEVER USE GLOBAL VARIABLE IN THIS FILE */
+
 /*==== FLASH ====*/
 #define SPIFLASH_BSY            0
 #define SPIFLASH_BSY_BIT        (1 << SPIFLASH_BSY) /* WIP Bit of SPI SR */

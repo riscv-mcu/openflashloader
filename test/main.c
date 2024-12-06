@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/* NOTE: THIS TEST CODE IS USED WITH NUCLEI SDK */
+
 #define DEBUG_INFO          (1)
 
 /*==== Loader ====*/

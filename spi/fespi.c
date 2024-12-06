@@ -1,5 +1,7 @@
 #include "spi.h"
 
+/* WARNING: NEVER USE GLOBAL VARIABLE IN THIS FILE */
+
 /* Register offsets */
 #define FESPI_REG_SCKMODE           (0x04)
 #define FESPI_REG_FORCE             (0x0C)

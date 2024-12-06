@@ -1,5 +1,7 @@
 #include "flash.h"
 
+/* WARNING: NEVER USE GLOBAL VARIABLE IN THIS FILE */
+
 /*==== Loader ====*/
 #define ERASE_CMD           (1)
 #define WRITE_CMD           (2)

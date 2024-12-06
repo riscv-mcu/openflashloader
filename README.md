@@ -56,7 +56,10 @@ The flash loader(loader/loader.c) binary will ``loader_main`` with parameters pa
 **The following environment must be setuped**
 
 - **Nuclei Studio Version >= 2024.02**, which contains prebuilt gcc and openocd
-- Don't use any global variables.(**Warning**)
+
+> [!WARNING]
+
+- **WARNING** Don't use any global variables in flashloader implementation source code.
 
 ### Flash Driver API
 
@@ -87,7 +90,7 @@ Initialize nuspi, read flash ID and return the flash ID.
 
 **Return values**
 
-Flash ID（**Warning**）
+Flash ID
 
 #### flash_erase
 
