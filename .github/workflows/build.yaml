@@ -1,0 +1,112 @@
+name: Build OpenOCD Flash Loader
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    paths:
+        - "**"
+
+  pull_request:
+    paths:
+        - "*"
+
+jobs:
+  build:
+    name: build flashloader
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        sdkbranch: [master, develop]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Caching tools
+      uses: actions/cache@v3
+      with:
+        path: |
+          prebuilt_tools/*.tar.bz2
+          prebuilt_tools/*.zip
+          prebuilt_tools/*.tar.gz
+        key: build
+
+    - name: Prepare Tools for Ubuntu
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+          sudo apt-get -q update
+          sudo apt install -yq python3 python3-pip unzip libz-dev libssl-dev libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev libncursesw5-dev libncursesw5 libgmp-dev libmpfr-dev libmpc-dev
+          sudo python3 -m pip install -q --upgrade pip
+          # install to user local storage
+          # ERROR: Cannot uninstall 'pyserial'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.
+          pip3 install -q -r tools/scripts/requirements.txt
+          mkdir -p prebuilt_tools
+          cd prebuilt_tools
+          echo "Prepare Nuclei Toolchain......"
+          toolzip=nuclei_riscv_newlibc_prebuilt_linux64_2024.06.tar.bz2
+          if [ ! -e $toolzip ] ; then
+            echo "Download Nuclei toolchain now!"
+            wget --progress=dot:giga --no-check-certificate https://www.nucleisys.com/upload/files/toochain/gcc/$toolzip
+            ls -lh $toolzip
+            md5sum $toolzip
+          fi
+          tar -xjf $toolzip
+          echo "Prepare Nuclei QEMU......"
+          toolzip=nuclei-qemu-2024.06-linux-x64.tar.gz
+          if [ ! -e $toolzip ] ; then
+            echo "Download Nuclei qemu now!"
+            wget --progress=dot:giga --no-check-certificate https://www.nucleisys.com/upload/files/toochain/qemu/$toolzip
+            ls -lh $toolzip
+            md5sum $toolzip
+          fi
+          tar -xzf $toolzip
+          if [ -d linux_qemu ] ; then
+            mv linux_qemu qemu
+          fi
+          echo "Check gcc and qemu version"
+          ldd ./qemu/bin/qemu-system-riscv32
+          ./qemu/bin/qemu-system-riscv32 --version
+          ./gcc/bin/riscv64-unknown-elf-gcc -v
+          cd ..
+          SDKBRANCH=${{ matrix.sdkbranch }}
+          echo "Clone Nuclei SDK using branch $SDKBRANCH"
+          git clone -b $SDKBRANCH -depth 1 https://github.com/Nuclei-Software/nuclei-sdk
+          cd nuclei-sdk
+          echo "NUCLEI_TOOL_ROOT=$(pwd)/prebuilt_tools" > setup_config.sh
+          cd ..
+
+    - name: Build and Test Flashloader
+      run: |
+        echo "Setup Nuclei SDK build environment"
+        cd nuclei-sdk
+        source setup.sh
+        cd ..
+        echo "Set NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
+        export NUCLEI_SDK_ROOT=$(pwd)/nuclei-sdk"
+
+        echo "Start to do flashloader build test in different build mode"
+        for mode in "sdk" "loader"; do
+            for arch in "rv32" "rv64"; do
+                for spi in "nuspi" "fespi"; do
+                    makeflags="MODE=$mode ARCH=$arch SPI=$spi FLASH=w25q256fv"
+                    echo "Clean and Build freeloader for $makeflags"
+                    make $makeflags clean all
+                    if [ "$SPI" == "fespi" ] ; then
+                        make $makeflags clean
+                        echo "Test in qemu and check whether pass or fail"
+                        timeout 60s make $makeflags SIMU=qemu run_qemu
+                        if [ "x$?" == "x0" ] ; then
+                            echo "Test in qemu for $makeflags: PASS"
+                        else
+                            echo "Test in qemu for $makeflags: FAIL"
+                        fi
+                    fi
+                done
+            done
+        done
