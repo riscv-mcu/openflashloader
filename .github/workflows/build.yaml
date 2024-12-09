@@ -13,6 +13,9 @@ on:
     paths:
         - "*"
 
+  schedule:
+    - cron: '0 0 */3 * *'
+
 jobs:
   build:
     name: build flashloader
