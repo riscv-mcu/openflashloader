@@ -22,17 +22,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         sdkbranch: [master, develop]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
 
     - name: Caching tools
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           prebuilt_tools/*.tar.bz2
@@ -49,7 +49,7 @@ jobs:
           mkdir -p prebuilt_tools
           cd prebuilt_tools
           TOOLROOT=$(pwd)
-          TOOLVER=2024.06
+          TOOLVER=2025.02
           echo "Prepare Nuclei Toolchain $TOOLVER ......"
           toolzip=nuclei_riscv_newlibc_prebuilt_linux64_${TOOLVER}.tar.bz2
           if [ ! -e $toolzip ] ; then
