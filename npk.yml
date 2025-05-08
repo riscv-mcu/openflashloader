@@ -1,0 +1,52 @@
+## Package Base Information
+name: app-nsdk_flashloader_test
+owner: nuclei
+version: 1.0.0
+description: Nuclei OpenOCD Flashloader Test
+type: app
+keywords:
+  - baremetal
+  - get started
+  - flashloader
+category: baremetal application
+license: Apache-2.0
+homepage: https://github.com/riscv-mcu/openflashloader
+
+## Package Dependency
+dependencies:
+  - name: sdk-nuclei_sdk
+    owner: nuclei
+    version:
+  - name: ssp-nsdk_evalsoc
+    owner: nuclei
+    version:
+
+## Package Configurations
+configuration:
+  app_commonflags:
+    value: -O2
+    type: text
+    description: Application Compile Flags
+
+## Set Configuration for other packages
+setconfig:
+
+
+## Source Code Management
+codemanage:
+  copyfiles:
+    - path: ["flash/w25q256fv.c", "flash/flash.h"]
+    - path: ["spi/nuspi.c", "spi/spi.h"]
+    - path: ["loader/loader.c"]
+    - path: ["test/main.c"]
+  incdirs:
+    - path: ["spi", "loader", "flash"]
+  libdirs:
+  ldlibs:
+    - libs:
+
+## Build Configuration
+buildconfig:
+  - type: common
+    common_flags: # flags need to be combined together across all packages
+      - flags: ${app_commonflags}

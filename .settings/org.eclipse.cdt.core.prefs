@@ -1,0 +1,11 @@
+eclipse.preferences.version=1
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999.33724627/NUCLEI_SDK_ROOT/delimiter=;
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999.33724627/NUCLEI_SDK_ROOT/operation=append
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999.33724627/NUCLEI_SDK_ROOT/value=../nuclei-sdk
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999.33724627/append=true
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999.33724627/appendContributed=true
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999/NUCLEI_SDK_ROOT/delimiter=;
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999/NUCLEI_SDK_ROOT/operation=append
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999/NUCLEI_SDK_ROOT/value=../nuclei-sdk
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999/append=true
+environment/project/ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.base.427724999/appendContributed=true
