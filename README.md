@@ -46,7 +46,7 @@ Nuclei OpenOCD will load the flash loader binary which specified in openocd conf
 The flash loader(loader/loader.c) binary will ``loader_main`` with parameters passed in openocd custom flash driver, see https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270
 
 > Nuclei OpenOCD source code can be found in https://github.com/riscv-mcu/riscv-openocd/
->
+> 
 > Nuclei OpenOCD documentation can be found in https://doc.nucleisys.com/nuclei_tools/openocd/intro.html
 
 ![procedure](img/procedure.png)
@@ -58,18 +58,18 @@ The flash loader(loader/loader.c) binary will ``loader_main`` with parameters pa
 - **Nuclei Studio Version >= 2024.02**, which contains prebuilt gcc and openocd
 
 > [!IMPORTANT]
->
+> 
 > **WARNING** Don't use any global variables in flashloader implementation source code.
 
 > [!IMPORTANT]
->
+> 
 > **WARNING** These events cause a system reset and require the user to initialize the corresponding controllers themselves.
->
+> 
 > 1、gdb-flash-erase-start "reset init
->
+> 
 > 2、gdb-flash-write-end "reset halt"
 
-### Flash Driver API
+## Flash Driver API
 
 This section mainly describe the flash driver API you must implemented for your own flash driver.
 
@@ -177,19 +177,13 @@ Read the **count** data from flash's **offset** to **buffer**.
 * 0: OK
 * Other: ERROR
 
-## How To Use
-
-Implement your own flash driver to match above ``Flash driver API``, this flash loader is called via openocd
-**custom** loader developed in https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270.
-
-- Flash driver reference: ``flash/w25q256fv.c``
-- SPI driver reference maybe used by flash: ``spi/nuspi.c``
+## How To Compile In Command Line
 
 To compile this flashloader code, you need to install Nuclei RISC-V Toolchain or Nuclei Studio(preferred, which contains the toolchain in ``<Nuclei Studio>/toolchain/gcc``), see https://nucleisys.com/download.php#tools
 
 You can directly setup environment **PATH** via command line before you build flashloader.
 
-~~~shell
+```shell
 # Assume that you have downloaded Nuclei Studio latest version, currently 2024.02
 # Please change NUCLEI_TOOL_ROOT to the real path of where your toolchain folder located in windows or linux
 
@@ -200,7 +194,7 @@ set PATH=%NUCLEI_TOOL_ROOT%\gcc\bin;%NUCLEI_TOOL_ROOT%\openocd\bin;%NUCLEI_TOOL_
 # Only execute commands below, if you are in linux bash terminal
 NUCLEI_TOOL_ROOT=~/NucleiStudio/toolchain
 export PATH=$NUCLEI_TOOL_ROOT/gcc/bin:$NUCLEI_TOOL_ROOT/openocd/bin:$NUCLEI_TOOL_ROOT/qemu/bin:$PATH
-~~~
+```
 
 In this repo, we provide sample flash loader implementation code which can be directly used with our Nuclei Evaluation SoC(SPI=nuspi FLASH=w25q256fv),
 which means you can check and verify it directly without any modification to see how it will work.
@@ -247,11 +241,11 @@ make ARCH=rv64 MODE=sdk SPI=fespi FLASH=w25q256fv debug
 ```
 
 > [!NOTE]
->
+> 
 > <mark>The loader can only be compiled if self-test has passed.</mark>
->
+> 
 > <mark>The **SPI** compile option is used to specify the spi driver source file without the suffix.</mark>
->
+> 
 > <mark>The **FLASH** compile option is used to specify the flash driver source file without the suffix.</mark>
 
 ### Compile Flashloader
@@ -271,6 +265,70 @@ make ARCH=rv64 MODE=loader SPI=fespi FLASH=w25q256fv clean all
 
 **Flashloader can be found** in ``build/rv32/loader.bin`` for ``ARCH=rv32``,
 and ``build/rv64/loader.bin`` for ``ARCH=rv64``.
+
+## How To Compile In NucleiStudio
+
+1. **Clone Repositories**  
+   Clone or download the source code from GitHub or Gitee websites. The repository links are as follows:
+   
+   - [GitHub - RISCV-MCU/openflashloader](https://github.com/riscv-mcu/openflashloader)
+   
+   - [Gitee - RISCV-MCU/openflashloader](https://gitee.com/riscv-mcu/openflashloader)
+   
+   - [GitHub - Nuclei-Software/nuclei-sdk](https://github.com/Nuclei-Software/nuclei-sdk)
+
+2. **Import Project**  
+   Follow these steps in NucleiStudio:
+   ![](img/nucleistudio_import_flashloader_1.png)
+   
+   To import the openflashloader project: 
+   
+   1. Download the ZIP archive from the openflashloader repository on GitHub or Gitee websites for import (left side of the figure)
+   
+   2. Clone the source code repository via git for import (right side of the figure). 
+   
+   Follow the steps shown in the figure below to complete the openflashloader project import process.
+   
+   ![](img/nucleistudio_import_flashloader_2.png)
+
+3. **Configuration**  
+   
+   After importing the openflashloader project into NucleiStudio, you can switch the build mode (Loader represents mode=loader in compilation options, SDK represents mode=sdk in compilation options) by following these steps shown in the figure below: 
+   
+   > Right-click the project -> Build Configurations -> Set Active -> mode.
+   
+   ![](img/nucleistudio_modify_flashloader_mode.png)
+   
+   After switching the compilation mode, you can access the configuration options page for the selected mode by following the steps shown in the figure below.
+   
+   > Right-click the project -> Properties.
+   
+   ![](img/nucleistudio_enter_project_config.png)
+   
+   After entering the project's mode configuration options page, you can modify the compilation options by adjusting the Build and Clean settings.
+   
+   > under C/C++ Build->Behavior.
+   
+   ![](img/nucleistudio_modify_build_command.png)
+   
+   When switching to SDK mode, you need to set NUCLEI_SDK_ROOT to the path of nuclei-sdk (since SDK mode relies on nuclei-sdk).
+   
+   > under the C/C++ Build->Environment section.
+   
+   ![](img/nucleistudio_modify_nuclei-sdk_path.png)
+
+## How To Use
+
+Implement your own flash driver to match above `Flash driver API`, this flash loader is called via openocd **custom** loader developed in https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270.
+
+- Flash driver reference: `flash/w25q256fv.c`
+
+- SPI driver reference maybe used by flash: `spi/nuspi.c`How To Use
+  
+  Implement your own flash driver to match above `Flash driver API`, this flash loader is called via openocd **custom** loader developed in https://github.com/riscv-mcu/riscv-openocd/blob/a383d1d034d87b6527e9e9ee8426973b7e0a12d0/src/flash/nor/custom.c#L111-L270.
+  
+  - Flash driver reference: `flash/w25q256fv.c`
+  - SPI driver reference maybe used by flash: `spi/nuspi.c`
 
 ### Flash Bank Configuration
 
@@ -299,21 +357,21 @@ flash bank $FLASHNAME custom 0x20000000 0 0 0 $TARGETNAME 0x10014000 /path/to/lo
 
 If the configuration is modified, eg. call it ``openocd.cfg``, then you can use run following command to test it:
 
-~~~shell
+```shell
 openocd -f /path/to/openocd.cfg
-~~~
+```
 
 > [!NOTE]
->
+> 
 > <mark> **custom** is the keyword and should not be changed with others.</mark>
->
+> 
 > <mark>In the current command **custom** option can't be modified.</mark>
->
+> 
 > <mark>**<loader_path>** option advised to write the full path,  because you maybe don't know where you are.</mark>
 
-## Error Table
+## Error Codes
 
-| Describe                 | Value     |
+| Description              | Value     |
 | ------------------------ | --------- |
 | RETURN_OK                | 0x0       |
 | RETURN_ERROR             | 0x1 << 31 |
